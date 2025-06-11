@@ -1,0 +1,17 @@
+//
+//  WidgemeTests.swift
+//  WidgemeTests
+//
+//  Created by Elliot Rapp on 6/11/25.
+//
+
+import Testing
+@testable import Widgeme
+
+struct WidgemeTests {
+
+    @Test func example() async throws {
+        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+    }
+
+}
