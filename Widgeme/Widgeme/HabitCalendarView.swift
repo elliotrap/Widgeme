@@ -11,11 +11,12 @@ struct HabitCalendarView: View {
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
 
-    /// The range of days displayed by the grid.
+    /// The range of days displayed by the grid ordered from newest to oldest.
     private var days: [Date] {
         let today = Calendar.current.startOfDay(for: Date())
-        let start = Calendar.current.date(byAdding: .day, value: -(totalDays - 1), to: today) ?? today
-        return (0..<totalDays).compactMap { Calendar.current.date(byAdding: .day, value: $0, to: start) }
+        return (0..<totalDays).compactMap { dayOffset in
+            Calendar.current.date(byAdding: .day, value: -dayOffset, to: today)
+        }
     }
 
     var body: some View {
@@ -27,6 +28,11 @@ struct HabitCalendarView: View {
                     .frame(width: 12, height: 12)
             }
         }
+        .padding(6)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(color.opacity(0.3))
+        )
     }
 }
 
