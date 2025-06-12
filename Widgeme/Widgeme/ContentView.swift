@@ -13,36 +13,36 @@ struct ContentView: View {
     @State private var newHabit = ""
 
     var body: some View {
-        NavigationView {
-            VStack(spacing: 16) {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 24) {
                 Text("\(Date().daysLeftInYear()) days left in the year")
-                    .font(.headline)
+                    .font(.title2.weight(.semibold))
 
                 HStack {
                     TextField("New Habit", text: $newHabit)
                         .textFieldStyle(.roundedBorder)
-                    Button("Add") {
+                    Button {
                         tracker.addHabit(name: newHabit)
                         newHabit = ""
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
                     }
+                    .buttonStyle(.borderedProminent)
                     .disabled(newHabit.isEmpty)
                 }
 
                 List {
                     ForEach(tracker.habits, id: \.id) { habit in
-                        HStack {
-                            Text(habit.name)
-                            Spacer()
-                            Button("Mark Today") {
-                                tracker.mark(habit: habit, date: Date(), completed: true)
-                            }
-                            .buttonStyle(.borderedProminent)
-                        }
+                        HabitRowView(habit: habit, tracker: tracker)
                     }
                 }
+                .listStyle(.insetGrouped)
             }
             .padding()
             .navigationTitle("Positive Habits")
+            .toolbar {
+                EditButton()
+            }
         }
     }
 }
