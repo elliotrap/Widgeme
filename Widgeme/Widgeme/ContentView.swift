@@ -30,19 +30,29 @@ struct ContentView: View {
 
                 List {
                     ForEach(tracker.habits, id: \.id) { habit in
-                        HStack {
-                            Text(habit.name)
-                            Spacer()
-                            Button("Mark Today") {
-                                tracker.mark(habit: habit, date: Date(), completed: true)
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text(habit.name)
+                                Spacer()
+                                Button("Mark Today") {
+                                    tracker.mark(habit: habit, date: Date(), completed: true)
+                                }
+                                .buttonStyle(.borderedProminent)
                             }
-                            .buttonStyle(.borderedProminent)
+                            HabitCalendarView(completionDates: tracker.completionDates(for: habit))
                         }
+                        .padding(.vertical, 4)
                     }
                 }
+                .listStyle(.plain)
             }
             .padding()
             .navigationTitle("Positive Habits")
+            .onAppear {
+                tracker.fetchHabits { _ in
+                    tracker.fetchAllRecords { _ in }
+                }
+            }
         }
     }
 }

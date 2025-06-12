@@ -81,4 +81,28 @@ class HabitTracker: ObservableObject {
             }
         }
     }
+
+    /// Fetches all HabitRecord items for every habit and stores them in ``records``.
+    func fetchAllRecords(completion: @escaping ([HabitRecord]) -> Void) {
+        let query = CKQuery(recordType: "HabitRecord", predicate: NSPredicate(value: true))
+        database.perform(query, inZoneWith: nil) { [weak self] results, error in
+            let items = results?.compactMap { record -> HabitRecord? in
+                guard
+                    let date = record["date"] as? Date,
+                    let completed = record["completed"] as? Bool,
+                    let ref = record["habit"] as? CKRecord.Reference
+                else { return nil }
+                return HabitRecord(id: record.recordID, habitID: ref.recordID, date: date, completed: completed)
+            } ?? []
+            DispatchQueue.main.async {
+                self?.records = items
+                completion(items)
+            }
+        }
+    }
+
+    /// Returns the completion dates for the specified habit from ``records``.
+    func completionDates(for habit: PositiveHabit) -> [Date] {
+        records.filter { $0.habitID == habit.id && $0.completed }.map { $0.date }
+    }
 }
