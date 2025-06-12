@@ -105,6 +105,7 @@ class HabitTracker: ObservableObject {
     func completionDates(for habit: PositiveHabit) -> [Date] {
         records.filter { $0.habitID == habit.id && $0.completed }.map { $0.date }
     }
+<<<<<<< HEAD
 
     /// Returns the current consecutive-day streak for the habit up to today.
     func currentStreak(for habit: PositiveHabit) -> Int {
@@ -179,4 +180,6 @@ class HabitTracker: ObservableObject {
             }
         }
     }
+=======
+>>>>>>> update-and-clean-up-ui
 }

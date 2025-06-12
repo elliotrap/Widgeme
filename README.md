@@ -7,6 +7,9 @@ widget shows how many days you've completed each habit overall. A fourth "Habit 
 includes a small `HabitTracker` class which can store daily check‑ins using
 CloudKit.
 
+The main screen now uses a cleaner design with modern SwiftUI components and
+displays the last seven days of progress for each habit.
+
 ### Widget
 
 The `DaysLeftWidget` displays the remaining days in the current year and

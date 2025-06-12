@@ -15,18 +15,21 @@ struct ContentView: View {
     @State private var editedName = ""
 
     var body: some View {
-        NavigationView {
-            VStack(spacing: 16) {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 24) {
                 Text("\(Date().daysLeftInYear()) days left in the year")
-                    .font(.headline)
+                    .font(.title2.weight(.semibold))
 
                 HStack {
                     TextField("New Habit", text: $newHabit)
                         .textFieldStyle(.roundedBorder)
-                    Button("Add") {
+                    Button {
                         tracker.addHabit(name: newHabit)
                         newHabit = ""
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
                     }
+                    .buttonStyle(.borderedProminent)
                     .disabled(newHabit.isEmpty)
                 }
 
@@ -65,6 +68,17 @@ struct ContentView: View {
             .padding()
             .navigationTitle("Positive Habits")
             .onAppear {
+                        HabitRowView(habit: habit, tracker: tracker)
+                    }
+                }
+                .listStyle(.insetGrouped)
+            }
+            .padding()
+            .navigationTitle("Positive Habits")
+            .toolbar {
+                EditButton()
+            }
+            .task {
                 tracker.fetchHabits { _ in
                     tracker.fetchAllRecords { _ in }
                 }
@@ -95,9 +109,9 @@ struct ContentView: View {
                 }
                 .presentationDetents([.medium])
             }
+
         }
-    }
-}
+
 
 #Preview {
     ContentView()
