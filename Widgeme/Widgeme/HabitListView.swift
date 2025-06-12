@@ -3,7 +3,6 @@ import SwiftUI
 struct HabitListView: View {
     @ObservedObject var tracker: HabitTracker
     @State private var newHabit = ""
-
     @State private var editingHabit: PositiveHabit?
     @State private var editedName = ""
 
@@ -19,6 +18,7 @@ struct HabitListView: View {
                     tracker.addHabit(name: newHabit)
                     newHabit = ""
                 }
+                .buttonStyle(.borderedProminent)
                 .disabled(newHabit.isEmpty)
             }
 
@@ -36,7 +36,6 @@ struct HabitListView: View {
                         HabitCalendarView(completionDates: tracker.completionDates(for: habit))
                     }
                     .padding(.vertical, 4)
-
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
                             tracker.deleteHabit(habit)
@@ -62,7 +61,6 @@ struct HabitListView: View {
                 tracker.fetchAllRecords { _ in }
             }
         }
-
         .sheet(item: $editingHabit) { habit in
             NavigationView {
                 VStack(spacing: 16) {
