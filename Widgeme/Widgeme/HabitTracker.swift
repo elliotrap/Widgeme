@@ -49,4 +49,36 @@ class HabitTracker: ObservableObject {
             }
         }
     }
+
+    func fetchHabits(completion: @escaping ([PositiveHabit]) -> Void) {
+        let query = CKQuery(recordType: "PositiveHabit", predicate: NSPredicate(value: true))
+        database.perform(query, inZoneWith: nil) { [weak self] results, error in
+            let habits = results?.compactMap { record -> PositiveHabit? in
+                guard let name = record["name"] as? String else { return nil }
+                return PositiveHabit(id: record.recordID, name: name)
+            } ?? []
+            DispatchQueue.main.async {
+                self?.habits = habits
+                completion(habits)
+            }
+        }
+    }
+
+    func fetchRecords(for habit: PositiveHabit, completion: @escaping ([HabitRecord]) -> Void) {
+        let predicate = NSPredicate(format: "habit == %@", habit.id)
+        let query = CKQuery(recordType: "HabitRecord", predicate: predicate)
+        database.perform(query, inZoneWith: nil) { [weak self] results, error in
+            let items = results?.compactMap { record -> HabitRecord? in
+                guard
+                    let date = record["date"] as? Date,
+                    let completed = record["completed"] as? Bool
+                else { return nil }
+                return HabitRecord(id: record.recordID, habitID: habit.id, date: date, completed: completed)
+            } ?? []
+            DispatchQueue.main.async {
+                self?.records = items
+                completion(items)
+            }
+        }
+    }
 }
