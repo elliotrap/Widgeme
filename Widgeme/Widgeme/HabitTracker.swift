@@ -1,7 +1,7 @@
 import CloudKit
 import Foundation
 
-struct PositiveHabit {
+struct PositiveHabit: Identifiable {
     let id: CKRecord.ID
     let name: String
 }
@@ -143,5 +143,40 @@ class HabitTracker: ObservableObject {
             previous = date
         }
         return longest
+    }
+
+    /// Updates the name of an existing habit.
+    func updateHabit(_ habit: PositiveHabit, name: String) {
+        database.fetch(withRecordID: habit.id) { [weak self] record, error in
+            guard let record = record, error == nil else { return }
+            record["name"] = name as NSString
+            self?.database.save(record) { [weak self] saved, error in
+                guard error == nil else { return }
+                DispatchQueue.main.async {
+                    if let index = self?.habits.firstIndex(where: { $0.id == habit.id }) {
+                        self?.habits[index] = PositiveHabit(id: habit.id, name: name)
+                    }
+                }
+            }
+        }
+    }
+
+    /// Deletes the habit and any stored records from CloudKit.
+    func deleteHabit(_ habit: PositiveHabit) {
+        database.delete(withRecordID: habit.id) { [weak self] _, error in
+            guard error == nil else { return }
+            DispatchQueue.main.async {
+                self?.habits.removeAll { $0.id == habit.id }
+                self?.records.removeAll { $0.habitID == habit.id }
+            }
+        }
+
+        let predicate = NSPredicate(format: "habit == %@", habit.id)
+        let query = CKQuery(recordType: "HabitRecord", predicate: predicate)
+        database.perform(query, inZoneWith: nil) { [weak self] results, _ in
+            results?.forEach { record in
+                self?.database.delete(withRecordID: record.recordID) { _, _ in }
+            }
+        }
     }
 }

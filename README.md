@@ -21,6 +21,8 @@ habits with the total number of days you've marked them complete. The `HabitStre
 CloudKit. You can now add custom habits and mark each one complete for the
 current day. Each check-in is saved to CloudKit so your progress syncs across
 devices. It can now calculate your current and longest streaks for each habit.
+You can edit or delete habits in the main list via swipe actions and the changes
+are synced to CloudKit.
 
 This repository only contains the Swift source files. You may need to open the
 `Widgeme.xcodeproj` in Xcode and add a widget extension target to build the
