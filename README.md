@@ -18,3 +18,7 @@ recorded.
 This repository only contains the Swift source files. You may need to open the
 `Widgeme.xcodeproj` in Xcode and add a widget extension target to build the
 widget on a device or simulator.
+
+### Entitlements
+
+The app requires a `Widgeme.entitlements` file to enable CloudKit. The sample file in this repository uses a placeholder container identifier (`iCloud.com.example.widgeme`). Update it to match your own iCloud container before building.
