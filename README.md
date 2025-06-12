@@ -8,15 +8,21 @@ includes a small `HabitTracker` class which can store daily check‑ins using
 CloudKit.
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 The main screen now uses a cleaner design with modern SwiftUI components and
 displays the last seven days of progress for each habit.
 =======
+=======
+>>>>>>> fix-errors-from-outdated-update
 ### App UI
 
 The main app now uses a bottom tab bar with separate views for managing your
 habits and viewing summary statistics. Each tab is wrapped in a navigation view
 so the title is displayed at the top while the tab bar provides quick access to
 different sections.
+<<<<<<< HEAD
+>>>>>>> fix-errors-from-outdated-update
+=======
 >>>>>>> fix-errors-from-outdated-update
 
 ### Widget
