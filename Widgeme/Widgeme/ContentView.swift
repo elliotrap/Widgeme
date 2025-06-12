@@ -10,18 +10,40 @@ import CloudKit
 
 struct ContentView: View {
     @StateObject private var tracker = HabitTracker()
+    @State private var newHabit = ""
 
     var body: some View {
-        VStack(spacing: 16) {
-            Text("\(Date().daysLeftInYear()) days left in the year")
-                .font(.headline)
+        NavigationView {
+            VStack(spacing: 16) {
+                Text("\(Date().daysLeftInYear()) days left in the year")
+                    .font(.headline)
 
-            Button("Mark Today Complete") {
-                tracker.mark(date: Date(), completed: true)
+                HStack {
+                    TextField("New Habit", text: $newHabit)
+                        .textFieldStyle(.roundedBorder)
+                    Button("Add") {
+                        tracker.addHabit(name: newHabit)
+                        newHabit = ""
+                    }
+                    .disabled(newHabit.isEmpty)
+                }
+
+                List {
+                    ForEach(tracker.habits, id: \.id) { habit in
+                        HStack {
+                            Text(habit.name)
+                            Spacer()
+                            Button("Mark Today") {
+                                tracker.mark(habit: habit, date: Date(), completed: true)
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                    }
+                }
             }
-            .buttonStyle(.borderedProminent)
+            .padding()
+            .navigationTitle("Positive Habits")
         }
-        .padding()
     }
 }
 
