@@ -18,6 +18,7 @@ struct HabitListView: View {
                     tracker.addHabit(name: newHabit)
                     newHabit = ""
                 }
+                .buttonStyle(.borderedProminent)
                 .disabled(newHabit.isEmpty)
             }
 
