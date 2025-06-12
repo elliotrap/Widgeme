@@ -3,6 +3,7 @@ import SwiftUI
 struct HabitListView: View {
     @ObservedObject var tracker: HabitTracker
     @State private var newHabit = ""
+    @State private var showAddSheet = false
     @State private var editingHabit: PositiveHabit?
     @State private var editedName = ""
 
@@ -12,14 +13,13 @@ struct HabitListView: View {
                 .font(.headline)
 
             HStack {
-                TextField("New Habit", text: $newHabit)
-                    .textFieldStyle(.roundedBorder)
-                Button("Add") {
-                    tracker.addHabit(name: newHabit)
-                    newHabit = ""
+                Spacer()
+                Button {
+                    showAddSheet = true
+                } label: {
+                    Label("Add Habit", systemImage: "plus.circle.fill")
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(newHabit.isEmpty)
             }
 
             List {
@@ -33,7 +33,11 @@ struct HabitListView: View {
                             }
                             .buttonStyle(.borderedProminent)
                         }
-                        HabitCalendarView(completionDates: tracker.completionDates(for: habit))
+                        HabitCalendarView(
+                            completionDates: tracker.completionDates(for: habit),
+                            totalDays: habit.days,
+                            color: Color.from(name: habit.colorName)
+                        )
                     }
                     .padding(.vertical, 4)
                     .swipeActions(edge: .trailing) {
@@ -60,6 +64,9 @@ struct HabitListView: View {
             tracker.fetchHabits { _ in
                 tracker.fetchAllRecords { _ in }
             }
+        }
+        .sheet(isPresented: $showAddSheet) {
+            AddHabitView(tracker: tracker)
         }
         .sheet(item: $editingHabit) { habit in
             NavigationView {

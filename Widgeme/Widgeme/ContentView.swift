@@ -10,7 +10,7 @@ import CloudKit
 
 struct ContentView: View {
     @StateObject private var tracker = HabitTracker()
-    @State private var newHabit = ""
+    @State private var showAddSheet = false
     @State private var editingHabit: PositiveHabit?
     @State private var editedName = ""
     @State private var showCloudAlert = false
@@ -24,16 +24,13 @@ struct ContentView: View {
                         .font(.title2.weight(.semibold))
 
                     HStack {
-                        TextField("New Habit", text: $newHabit)
-                            .textFieldStyle(.roundedBorder)
+                        Spacer()
                         Button {
-                            tracker.addHabit(name: newHabit)
-                            newHabit = ""
+                            showAddSheet = true
                         } label: {
                             Image(systemName: "plus.circle.fill")
                         }
                         .buttonStyle(.borderedProminent)
-                        .disabled(newHabit.isEmpty)
                     }
 
                     List {
@@ -116,6 +113,10 @@ struct ContentView: View {
                 }
             }
             .presentationDetents([.medium])
+        }
+        // Add habit sheet
+        .sheet(isPresented: $showAddSheet) {
+            AddHabitView(tracker: tracker)
         }
         // iCloud alert
         .alert("iCloud Unavailable", isPresented: $showCloudAlert) {
