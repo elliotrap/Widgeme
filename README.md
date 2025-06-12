@@ -12,8 +12,9 @@ It refreshes automatically every day.
 ### Habit Tracking
 
 `HabitTracker` provides a starting point for storing completed days in
-CloudKit. Each time the **Mark Today Complete** button is tapped the day is
-recorded.
+CloudKit. You can now add custom habits and mark each one complete for the
+current day. Each check-in is saved to CloudKit so your progress syncs across
+devices.
 
 This repository only contains the Swift source files. You may need to open the
 `Widgeme.xcodeproj` in Xcode and add a widget extension target to build the
