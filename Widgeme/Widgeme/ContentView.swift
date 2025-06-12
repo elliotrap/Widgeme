@@ -43,6 +43,11 @@ struct ContentView: View {
             .toolbar {
                 EditButton()
             }
+            .task {
+                tracker.fetchHabits { _ in
+                    tracker.fetchAllRecords { _ in }
+                }
+            }
         }
     }
 }
