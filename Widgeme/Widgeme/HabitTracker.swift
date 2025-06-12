@@ -58,7 +58,14 @@ class HabitTracker: ObservableObject {
         let record = CKRecord(recordType: "PositiveHabit")
         record["name"] = name as NSString
         database.save(record) { [weak self] record, error in
-            guard let record = record, error == nil else { return }
+            if let error = error {
+                print("Error saving PositiveHabit: \(error.localizedDescription)")
+                return
+            }
+            guard let record = record else {
+                print("No record returned when saving PositiveHabit")
+                return
+            }
             let habit = PositiveHabit(id: record.recordID, name: name)
             DispatchQueue.main.async { self?.habits.append(habit) }
         }
@@ -75,7 +82,14 @@ class HabitTracker: ObservableObject {
         record["date"] = date as NSDate
         record["completed"] = completed as NSNumber
         database.save(record) { [weak self] record, error in
-            guard let record = record, error == nil else { return }
+            if let error = error {
+                print("Error saving HabitRecord: \(error.localizedDescription)")
+                return
+            }
+            guard let record = record else {
+                print("No record returned when saving HabitRecord")
+                return
+            }
             let entry = HabitRecord(
                 id: record.recordID,
                 habitID: habit.id,
@@ -211,10 +225,24 @@ class HabitTracker: ObservableObject {
     ///   - name: The new name to assign.
     func updateHabit(_ habit: PositiveHabit, name: String) {
         database.fetch(withRecordID: habit.id) { [weak self] record, error in
-            guard let record = record, error == nil else { return }
+            if let error = error {
+                print("Error fetching habit for update: \(error.localizedDescription)")
+                return
+            }
+            guard let record = record else {
+                print("No record found when updating habit \(habit.id)")
+                return
+            }
             record["name"] = name as NSString
             self?.database.save(record) { saved, err in
-                guard saved != nil, err == nil else { return }
+                if let err = err {
+                    print("Error saving updated habit: \(err.localizedDescription)")
+                    return
+                }
+                guard saved != nil else {
+                    print("No record returned after updating habit")
+                    return
+                }
                 DispatchQueue.main.async {
                     if let index = self?.habits.firstIndex(where: { $0.id == habit.id }) {
                         self?.habits[index] = PositiveHabit(id: habit.id, name: name)
@@ -229,7 +257,10 @@ class HabitTracker: ObservableObject {
     func deleteHabit(_ habit: PositiveHabit) {
         // Remove the habit record
         database.delete(withRecordID: habit.id) { [weak self] _, error in
-            guard error == nil else { return }
+            if let error = error {
+                print("Error deleting habit \(habit.id): \(error.localizedDescription)")
+                return
+            }
             DispatchQueue.main.async {
                 self?.habits.removeAll { $0.id == habit.id }
                 self?.records.removeAll { $0.habitID == habit.id }
@@ -239,9 +270,16 @@ class HabitTracker: ObservableObject {
         // Remove dependent records
         let predicate = NSPredicate(format: "habit == %@", habit.id)
         let query = CKQuery(recordType: "HabitRecord", predicate: predicate)
-        database.perform(query, inZoneWith: nil) { [weak self] results, _ in
+        database.perform(query, inZoneWith: nil) { [weak self] results, error in
+            if let error = error {
+                print("Error fetching dependent records for deletion: \(error.localizedDescription)")
+            }
             results?.forEach { record in
-                self?.database.delete(withRecordID: record.recordID) { _, _ in }
+                self?.database.delete(withRecordID: record.recordID) { _, err in
+                    if let err = err {
+                        print("Error deleting dependent record \(record.recordID): \(err.localizedDescription)")
+                    }
+                }
             }
         }
     }
