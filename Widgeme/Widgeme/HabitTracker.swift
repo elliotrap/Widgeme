@@ -1,7 +1,7 @@
 import CloudKit
 import Foundation
 
-struct PositiveHabit {
+struct PositiveHabit: Identifiable {
     let id: CKRecord.ID
     let name: String
 }
@@ -19,9 +19,20 @@ class HabitTracker: ObservableObject {
 
     @Published var habits: [PositiveHabit] = []
     @Published var records: [HabitRecord] = []
+    @Published var accountStatus: CKAccountStatus = .couldNotDetermine
 
     init(container: CKContainer = .default()) {
         self.container = container
+    }
+
+    /// Checks the user's CloudKit account status and updates ``accountStatus``.
+    func checkAccountStatus(completion: ((CKAccountStatus) -> Void)? = nil) {
+        container.accountStatus { [weak self] status, _ in
+            DispatchQueue.main.async {
+                self?.accountStatus = status
+                completion?(status)
+            }
+        }
     }
 
     func addHabit(name: String) {
@@ -104,5 +115,79 @@ class HabitTracker: ObservableObject {
     /// Returns the completion dates for the specified habit from ``records``.
     func completionDates(for habit: PositiveHabit) -> [Date] {
         records.filter { $0.habitID == habit.id && $0.completed }.map { $0.date }
+    }
+
+    /// Returns the current consecutive-day streak for the habit up to today.
+    func currentStreak(for habit: PositiveHabit) -> Int {
+        let completions = completionDates(for: habit)
+            .map { Calendar.current.startOfDay(for: $0) }
+            .sorted(by: >)
+        var streak = 0
+        var day = Calendar.current.startOfDay(for: Date())
+        for date in completions {
+            if Calendar.current.isDate(date, inSameDayAs: day) {
+                streak += 1
+                day = Calendar.current.date(byAdding: .day, value: -1, to: day)!
+            } else if date < day {
+                break
+            }
+        }
+        return streak
+    }
+
+    /// Returns the longest streak of consecutive completions for the habit.
+    func longestStreak(for habit: PositiveHabit) -> Int {
+        let dates = completionDates(for: habit)
+            .map { Calendar.current.startOfDay(for: $0) }
+            .sorted()
+        var longest = 0
+        var current = 0
+        var previous: Date?
+        for date in dates {
+            if let prev = previous,
+               Calendar.current.dateComponents([.day], from: prev, to: date).day == 1 {
+                current += 1
+            } else {
+                current = 1
+            }
+            longest = max(longest, current)
+            previous = date
+        }
+        return longest
+    }
+
+    /// Updates the name of an existing habit.
+    func updateHabit(_ habit: PositiveHabit, name: String) {
+        database.fetch(withRecordID: habit.id) { [weak self] record, error in
+            guard let record = record, error == nil else { return }
+            record["name"] = name as NSString
+            self?.database.save(record) { [weak self] saved, error in
+                guard error == nil else { return }
+                DispatchQueue.main.async {
+                    if let index = self?.habits.firstIndex(where: { $0.id == habit.id }) {
+                        self?.habits[index] = PositiveHabit(id: habit.id, name: name)
+                    }
+                }
+            }
+        }
+    }
+
+    /// Deletes the habit and any stored records from CloudKit.
+    func deleteHabit(_ habit: PositiveHabit) {
+        database.delete(withRecordID: habit.id) { [weak self] _, error in
+            guard error == nil else { return }
+            DispatchQueue.main.async {
+                self?.habits.removeAll { $0.id == habit.id }
+                self?.records.removeAll { $0.habitID == habit.id }
+            }
+        }
+
+        let predicate = NSPredicate(format: "habit == %@", habit.id)
+        let query = CKQuery(recordType: "HabitRecord", predicate: predicate)
+        database.perform(query, inZoneWith: nil) { [weak self] results, _ in
+            results?.forEach { record in
+                self?.database.delete(withRecordID: record.recordID) { _, _ in }
+            }
+        }
     }
 }
