@@ -1,7 +1,7 @@
 import CloudKit
 import Foundation
 
-struct PositiveHabit {
+struct PositiveHabit: Identifiable {
     let id: CKRecord.ID
     let name: String
 }
@@ -143,5 +143,32 @@ class HabitTracker: ObservableObject {
             previous = date
         }
         return longest
+    }
+
+    /// Deletes the given habit record and removes any associated records.
+    func deleteHabit(_ habit: PositiveHabit) {
+        database.delete(withRecordID: habit.id) { [weak self] recordID, error in
+            guard recordID != nil, error == nil else { return }
+            DispatchQueue.main.async {
+                self?.habits.removeAll { $0.id == habit.id }
+                self?.records.removeAll { $0.habitID == habit.id }
+            }
+        }
+    }
+
+    /// Updates the name of the given habit.
+    func updateHabit(_ habit: PositiveHabit, name: String) {
+        database.fetch(withRecordID: habit.id) { [weak self] record, error in
+            guard let record = record, error == nil else { return }
+            record["name"] = name as NSString
+            self?.database.save(record) { record, error in
+                guard record != nil, error == nil else { return }
+                DispatchQueue.main.async {
+                    if let index = self?.habits.firstIndex(where: { $0.id == habit.id }) {
+                        self?.habits[index] = PositiveHabit(id: habit.id, name: name)
+                    }
+                }
+            }
+        }
     }
 }
