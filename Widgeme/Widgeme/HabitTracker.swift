@@ -42,7 +42,10 @@ class HabitTracker: ObservableObject {
     /// Checks the user's CloudKit account status and updates `accountStatus`.
     /// - Parameter completion: Callback with the current account status.
     func checkAccountStatus(completion: @escaping (CKAccountStatus) -> Void) {
-        container.accountStatus { [weak self] status, _ in
+        container.accountStatus { [weak self] status, error in
+            if let error = error {
+                print("Error checking CloudKit account status: \(error.localizedDescription)")
+            }
             DispatchQueue.main.async {
                 self?.accountStatus = status
                 completion(status)
@@ -106,7 +109,10 @@ class HabitTracker: ObservableObject {
     /// - Parameter completion: Callback with the fetched habits.
     func fetchHabits(completion: @escaping ([PositiveHabit]) -> Void) {
         let query = CKQuery(recordType: "PositiveHabit", predicate: NSPredicate(value: true))
-        database.perform(query, inZoneWith: nil) { [weak self] results, _ in
+        database.perform(query, inZoneWith: nil) { [weak self] results, error in
+            if let error = error {
+                print("Error fetching habits: \(error.localizedDescription)")
+            }
             let list = results?.compactMap { record -> PositiveHabit? in
                 guard let name = record["name"] as? String else { return nil }
                 return PositiveHabit(id: record.recordID, name: name)
@@ -125,7 +131,10 @@ class HabitTracker: ObservableObject {
     func fetchRecords(for habit: PositiveHabit, completion: @escaping ([HabitRecord]) -> Void) {
         let predicate = NSPredicate(format: "habit == %@", habit.id)
         let query = CKQuery(recordType: "HabitRecord", predicate: predicate)
-        database.perform(query, inZoneWith: nil) { [weak self] results, _ in
+        database.perform(query, inZoneWith: nil) { [weak self] results, error in
+            if let error = error {
+                print("Error fetching records for habit \(habit.id): \(error.localizedDescription)")
+            }
             let entries = results?.compactMap { record -> HabitRecord? in
                 guard
                     let date = record["date"] as? Date,
@@ -149,7 +158,10 @@ class HabitTracker: ObservableObject {
     /// - Parameter completion: Callback with the fetched records.
     func fetchAllRecords(completion: @escaping ([HabitRecord]) -> Void) {
         let query = CKQuery(recordType: "HabitRecord", predicate: NSPredicate(value: true))
-        database.perform(query, inZoneWith: nil) { [weak self] results, _ in
+        database.perform(query, inZoneWith: nil) { [weak self] results, error in
+            if let error = error {
+                print("Error fetching all records: \(error.localizedDescription)")
+            }
             let entries = results?.compactMap { record -> HabitRecord? in
                 guard
                     let date = record["date"] as? Date,
