@@ -1,15 +1,29 @@
 import CloudKit
 import Foundation
 
+/// Local representation of a `PositiveHabit` record in CloudKit.
+/// - Fields:
+///   - `name`: stored as a `String` in the CloudKit record.
 struct PositiveHabit {
+    /// Identifier of the CloudKit record.
     let id: CKRecord.ID
+    /// Name of the habit. Saved in the record under the `"name"` key.
     let name: String
 }
 
+/// Local representation of a `HabitRecord` record in CloudKit.
+/// - Fields:
+///   - `habit`: reference to the associated `PositiveHabit` record.
+///   - `date`: the day the habit was marked.
+///   - `completed`: whether the habit was done on that date.
 struct HabitRecord {
+    /// Identifier of the CloudKit record.
     let id: CKRecord.ID
+    /// Record ID of the parent `PositiveHabit`, stored under the `"habit"` key.
     let habitID: CKRecord.ID
+    /// Day this record represents. Saved under the `"date"` key.
     let date: Date
+    /// Completion flag saved under the `"completed"` key.
     let completed: Bool
 }
 
@@ -25,7 +39,9 @@ class HabitTracker: ObservableObject {
     }
 
     func addHabit(name: String) {
+        // Creates a `PositiveHabit` record with the single `name` field.
         let record = CKRecord(recordType: "PositiveHabit")
+        // CloudKit field "name"
         record["name"] = name as NSString
         database.save(record) { [weak self] record, error in
             guard let record = record, error == nil else { return }
@@ -37,9 +53,13 @@ class HabitTracker: ObservableObject {
     }
 
     func mark(habit: PositiveHabit, date: Date, completed: Bool) {
+        // Creates a `HabitRecord` with references to a habit and completion info.
         let record = CKRecord(recordType: "HabitRecord")
+        // Reference to the parent habit saved under "habit"
         record["habit"] = CKRecord.Reference(recordID: habit.id, action: .none)
+        // Day being tracked stored under "date"
         record["date"] = date as NSDate
+        // Whether the habit was completed stored under "completed"
         record["completed"] = completed as NSNumber
         database.save(record) { [weak self] record, error in
             guard let record = record, error == nil else { return }
@@ -51,6 +71,7 @@ class HabitTracker: ObservableObject {
     }
 
     func fetchHabits(completion: @escaping ([PositiveHabit]) -> Void) {
+        // Retrieve all `PositiveHabit` records and populate `habits`.
         let query = CKQuery(recordType: "PositiveHabit", predicate: NSPredicate(value: true))
         database.perform(query, inZoneWith: nil) { [weak self] results, error in
             let habits = results?.compactMap { record -> PositiveHabit? in
@@ -65,6 +86,7 @@ class HabitTracker: ObservableObject {
     }
 
     func fetchRecords(for habit: PositiveHabit, completion: @escaping ([HabitRecord]) -> Void) {
+        // Fetch `HabitRecord` items associated with the given habit.
         let predicate = NSPredicate(format: "habit == %@", habit.id)
         let query = CKQuery(recordType: "HabitRecord", predicate: predicate)
         database.perform(query, inZoneWith: nil) { [weak self] results, error in
@@ -84,6 +106,7 @@ class HabitTracker: ObservableObject {
 
     /// Fetches all HabitRecord items for every habit and stores them in ``records``.
     func fetchAllRecords(completion: @escaping ([HabitRecord]) -> Void) {
+        // Convenience helper to fetch every `HabitRecord` for all habits.
         let query = CKQuery(recordType: "HabitRecord", predicate: NSPredicate(value: true))
         database.perform(query, inZoneWith: nil) { [weak self] results, error in
             let items = results?.compactMap { record -> HabitRecord? in
