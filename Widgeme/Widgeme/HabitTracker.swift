@@ -5,9 +5,13 @@ import Foundation
 ///
 /// - `id`: Unique identifier of the CloudKit record.
 /// - `name`: The title of the habit, saved under the `"name"` key.
+/// - `days`: Number of days to display in the progress grid.
+/// - `colorName`: The name of the color used for the grid UI.
 struct PositiveHabit: Identifiable {
     let id: CKRecord.ID
     let name: String
+    let days: Int
+    let colorName: String
 }
 
 /// Represents a daily completion record for a `PositiveHabit` in CloudKit.
@@ -53,13 +57,21 @@ class HabitTracker: ObservableObject {
     // MARK: - Create Operations
 
     /// Adds a new `PositiveHabit` record to CloudKit.
-    /// - Parameter name: The name of the habit to create.
-    func addHabit(name: String) {
+    /// - Parameters:
+    ///   - name: The name of the habit to create.
+    ///   - days: Number of days to display in the progress grid.
+    ///   - colorName: Name of the color used for the habit grid.
+    func addHabit(name: String, days: Int, colorName: String) {
         let record = CKRecord(recordType: "PositiveHabit")
         record["name"] = name as NSString
+        record["days"] = days as NSNumber
+        record["color"] = colorName as NSString
         database.save(record) { [weak self] record, error in
             guard let record = record, error == nil else { return }
-            let habit = PositiveHabit(id: record.recordID, name: name)
+            let habit = PositiveHabit(id: record.recordID,
+                                      name: name,
+                                      days: days,
+                                      colorName: colorName)
             DispatchQueue.main.async { self?.habits.append(habit) }
         }
     }
@@ -95,7 +107,14 @@ class HabitTracker: ObservableObject {
         database.perform(query, inZoneWith: nil) { [weak self] results, _ in
             let list = results?.compactMap { record -> PositiveHabit? in
                 guard let name = record["name"] as? String else { return nil }
-                return PositiveHabit(id: record.recordID, name: name)
+                let days = record["days"] as? Int ?? 28
+                let color = record["color"] as? String ?? "green"
+                return PositiveHabit(
+                    id: record.recordID,
+                    name: name,
+                    days: days,
+                    colorName: color
+                )
             } ?? []
             DispatchQueue.main.async {
                 self?.habits = list
@@ -217,7 +236,13 @@ class HabitTracker: ObservableObject {
                 guard saved != nil, err == nil else { return }
                 DispatchQueue.main.async {
                     if let index = self?.habits.firstIndex(where: { $0.id == habit.id }) {
-                        self?.habits[index] = PositiveHabit(id: habit.id, name: name)
+                        let current = self?.habits[index]
+                        self?.habits[index] = PositiveHabit(
+                            id: habit.id,
+                            name: name,
+                            days: current?.days ?? 28,
+                            colorName: current?.colorName ?? "green"
+                        )
                     }
                 }
             }
