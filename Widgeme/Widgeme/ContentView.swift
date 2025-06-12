@@ -8,8 +8,9 @@
 import SwiftUI
 import CloudKit
 
-struct ContentView: View {
+struct ContentView: View { // Type 'ContentView' does not conform to protocol 'View'
     @StateObject private var tracker = HabitTracker()
+<<<<<<< HEAD // Source control conflict marker in source file
     @State private var newHabit = ""
     @State private var editingHabit: PositiveHabit?
     @State private var editedName = ""
@@ -82,11 +83,28 @@ struct ContentView: View {
                 tracker.fetchHabits { _ in
                     tracker.fetchAllRecords { _ in }
                 }
+=======
+
+    var body: some View {
+        TabView {
+            NavigationView {
+                HabitListView(tracker: tracker)
             }
-            .sheet(item: $editingHabit) { habit in
+            .tabItem {
+                Label("Habits", systemImage: "checkmark.circle")
+            }
+
+            NavigationView {
+                StatsView(tracker: tracker)
+            }
+            .tabItem {
+                Label("Stats", systemImage: "chart.bar")
+>>>>>>> fix-errors-from-outdated-update
+            }
+            .sheet(item: $editingHabit) { habit in // Cannot find '$editingHabit' in scope // Expressions are not allowed at the top level //  Reference to member 'sheet' cannot be resolved without a contextual type
                 NavigationView {
                     VStack(spacing: 16) {
-                        TextField("Habit Name", text: $editedName)
+                        TextField("Habit Name", text: $editedName) // Cannot find '$editedName' in scope
                             .textFieldStyle(.roundedBorder)
                             .padding()
                         Spacer()
@@ -94,11 +112,11 @@ struct ContentView: View {
                     .navigationTitle("Edit Habit")
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Cancel") { editingHabit = nil }
+                            Button("Cancel") { editingHabit = nil } // Cannot find 'editingHabit' in scope
                         }
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Save") {
-                                if let habit = editingHabit {
+                                if let habit = editingHabit { // Cannot find 'editedName' in scope
                                     tracker.updateHabit(habit, name: editedName)
                                 }
                                 editingHabit = nil
@@ -110,7 +128,7 @@ struct ContentView: View {
                 .presentationDetents([.medium])
             }
 
-        }
+        } // Extraneous '}' at top level
 
 
 #Preview {

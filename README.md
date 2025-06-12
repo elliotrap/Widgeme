@@ -7,8 +7,17 @@ widget shows how many days you've completed each habit overall. A fourth "Habit 
 includes a small `HabitTracker` class which can store daily check‑ins using
 CloudKit.
 
+<<<<<<< HEAD
 The main screen now uses a cleaner design with modern SwiftUI components and
 displays the last seven days of progress for each habit.
+=======
+### App UI
+
+The main app now uses a bottom tab bar with separate views for managing your
+habits and viewing summary statistics. Each tab is wrapped in a navigation view
+so the title is displayed at the top while the tab bar provides quick access to
+different sections.
+>>>>>>> fix-errors-from-outdated-update
 
 ### Widget
 
@@ -16,7 +25,8 @@ The `DaysLeftWidget` displays the remaining days in the current year and
 refreshes automatically every day. The `HabitProgressWidget` shows a single
 habit with checkmarks for the last seven days so you can glance at your recent
 streaks right from the home screen. The `HabitCompletionCountWidget` lists your
-habits with the total number of days you've marked them complete. The `HabitStreakWidget` shows your current streak for one habit.
+habits with the total number of days you've marked them complete. The
+`HabitStreakWidget` shows your current streak for one habit.
 
 ### Habit Tracking
 
