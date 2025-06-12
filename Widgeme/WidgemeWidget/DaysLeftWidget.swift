@@ -50,8 +50,9 @@ struct DaysLeftWidget: Widget {
 }
 
 @main
-struct DaysLeftWidgetBundle: WidgetBundle {
+struct WidgemeWidgetBundle: WidgetBundle {
     var body: some Widget {
         DaysLeftWidget()
+        HabitProgressWidget()
     }
 }
