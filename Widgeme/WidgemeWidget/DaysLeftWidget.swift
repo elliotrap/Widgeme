@@ -55,5 +55,6 @@ struct WidgemeWidgetBundle: WidgetBundle {
         DaysLeftWidget()
         HabitProgressWidget()
         HabitCompletionCountWidget()
+        HabitStreakWidget()
     }
 }
