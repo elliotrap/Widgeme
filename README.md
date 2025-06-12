@@ -1,8 +1,9 @@
 # Widgeme
 
-This project is a simple SwiftUI application showcasing two widgets. The first
+This project is a simple SwiftUI application showcasing multiple widgets. The first
 widget counts down the days left in the year. A second "Habit Progress" widget
-displays your positive habit completions for the current week. The app also
+displays your positive habit completions for the current week. A third "Habit Totals"
+widget shows how many days you've completed each habit overall. The app also
 includes a small `HabitTracker` class which can store daily check‑ins using
 CloudKit.
 
@@ -11,7 +12,8 @@ CloudKit.
 The `DaysLeftWidget` displays the remaining days in the current year and
 refreshes automatically every day. The `HabitProgressWidget` shows a single
 habit with checkmarks for the last seven days so you can glance at your recent
-streaks right from the home screen.
+streaks right from the home screen. The `HabitCompletionCountWidget` lists your
+habits with the total number of days you've marked them complete.
 
 ### Habit Tracking
 
