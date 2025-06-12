@@ -105,4 +105,43 @@ class HabitTracker: ObservableObject {
     func completionDates(for habit: PositiveHabit) -> [Date] {
         records.filter { $0.habitID == habit.id && $0.completed }.map { $0.date }
     }
+
+    /// Returns the current consecutive-day streak for the habit up to today.
+    func currentStreak(for habit: PositiveHabit) -> Int {
+        let completions = completionDates(for: habit)
+            .map { Calendar.current.startOfDay(for: $0) }
+            .sorted(by: >)
+        var streak = 0
+        var day = Calendar.current.startOfDay(for: Date())
+        for date in completions {
+            if Calendar.current.isDate(date, inSameDayAs: day) {
+                streak += 1
+                day = Calendar.current.date(byAdding: .day, value: -1, to: day)!
+            } else if date < day {
+                break
+            }
+        }
+        return streak
+    }
+
+    /// Returns the longest streak of consecutive completions for the habit.
+    func longestStreak(for habit: PositiveHabit) -> Int {
+        let dates = completionDates(for: habit)
+            .map { Calendar.current.startOfDay(for: $0) }
+            .sorted()
+        var longest = 0
+        var current = 0
+        var previous: Date?
+        for date in dates {
+            if let prev = previous,
+               Calendar.current.dateComponents([.day], from: prev, to: date).day == 1 {
+                current += 1
+            } else {
+                current = 1
+            }
+            longest = max(longest, current)
+            previous = date
+        }
+        return longest
+    }
 }
