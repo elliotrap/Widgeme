@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var newHabit = ""
     @State private var editingHabit: PositiveHabit?
     @State private var editedName = ""
+    @State private var showCloudAlert = false
 
     var body: some View {
         TabView {
@@ -54,6 +55,9 @@ struct ContentView: View {
                                     .tint(.blue)
                                 }
                         }
+                        .onMove { indices, newOffset in
+                            tracker.habits.move(fromOffsets: indices, toOffset: newOffset)
+                        }
                     }
                     .listStyle(.plain)
                 }
@@ -62,9 +66,15 @@ struct ContentView: View {
                 .toolbar {
                     EditButton()
                 }
-                .task {
-                    tracker.fetchHabits { _ in
-                        tracker.fetchAllRecords { _ in }
+                .onAppear {
+                    tracker.checkAccountStatus { status in
+                        if status == .available {
+                            tracker.fetchHabits { _ in
+                                tracker.fetchAllRecords { _ in }
+                            }
+                        } else {
+                            showCloudAlert = true
+                        }
                     }
                 }
             }
@@ -80,7 +90,7 @@ struct ContentView: View {
                 Label("Stats", systemImage: "chart.bar")
             }
         }
-        // MARK: – Edit Habit Sheet
+        // Edit sheet
         .sheet(item: $editingHabit) { habit in
             NavigationView {
                 VStack(spacing: 16) {
@@ -107,8 +117,15 @@ struct ContentView: View {
             }
             .presentationDetents([.medium])
         }
+        // iCloud alert
+        .alert("iCloud Unavailable", isPresented: $showCloudAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Sign in to iCloud to sync habits across devices.")
+        }
     }
 }
+
 #Preview {
     ContentView()
 }

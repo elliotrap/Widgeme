@@ -30,10 +30,24 @@ class HabitTracker: ObservableObject {
 
     @Published var habits: [PositiveHabit] = []
     @Published var records: [HabitRecord] = []
+    @Published var accountStatus: CKAccountStatus = .couldNotDetermine
 
     /// Initializes the tracker with a CloudKit container (default by default).
     init(container: CKContainer = .default()) {
         self.container = container
+    }
+
+    // MARK: - Account Status
+
+    /// Checks the user's CloudKit account status and updates `accountStatus`.
+    /// - Parameter completion: Callback with the current account status.
+    func checkAccountStatus(completion: @escaping (CKAccountStatus) -> Void) {
+        container.accountStatus { [weak self] status, _ in
+            DispatchQueue.main.async {
+                self?.accountStatus = status
+                completion(status)
+            }
+        }
     }
 
     // MARK: - Create Operations
@@ -153,12 +167,12 @@ class HabitTracker: ObservableObject {
 
     /// Calculates the current consecutive-day streak up to today.
     func currentStreak(for habit: PositiveHabit) -> Int {
-        let dates = completionDates(for: habit)
+        let days = completionDates(for: habit)
             .map { Calendar.current.startOfDay(for: $0) }
             .sorted(by: >)
         var streak = 0
         var day = Calendar.current.startOfDay(for: Date())
-        for recordDay in dates {
+        for recordDay in days {
             if Calendar.current.isDate(recordDay, inSameDayAs: day) {
                 streak += 1
                 day = Calendar.current.date(byAdding: .day, value: -1, to: day)!
@@ -171,12 +185,12 @@ class HabitTracker: ObservableObject {
 
     /// Calculates the longest consecutive-day streak ever achieved.
     func longestStreak(for habit: PositiveHabit) -> Int {
-        let dates = completionDates(for: habit)
+        let days = completionDates(for: habit)
             .map { Calendar.current.startOfDay(for: $0) }
             .sorted()
         var longest = 0, current = 0
         var previous: Date?
-        for recordDay in dates {
+        for recordDay in days {
             if let prev = previous,
                Calendar.current.dateComponents([.day], from: prev, to: recordDay).day == 1 {
                 current += 1
@@ -213,7 +227,7 @@ class HabitTracker: ObservableObject {
     /// Deletes a habit and all its associated completion records from CloudKit.
     /// - Parameter habit: The habit to remove.
     func deleteHabit(_ habit: PositiveHabit) {
-        // Remove the habit
+        // Remove the habit record
         database.delete(withRecordID: habit.id) { [weak self] _, error in
             guard error == nil else { return }
             DispatchQueue.main.async {
