@@ -46,8 +46,13 @@ class HabitTracker: ObservableObject {
     /// Checks the user's CloudKit account status and updates `accountStatus`.
     /// - Parameter completion: Callback with the current account status.
     func checkAccountStatus(completion: @escaping (CKAccountStatus) -> Void) {
-        container.accountStatus { [weak self] status, _ in
+        container.accountStatus { [weak self] status, error in
             DispatchQueue.main.async {
+                if let error = error {
+                    print("[CloudKit] Failed to fetch account status: \(error.localizedDescription)")
+                } else {
+                    print("[CloudKit] Account status: \(status)")
+                }
                 self?.accountStatus = status
                 completion(status)
             }
@@ -67,7 +72,12 @@ class HabitTracker: ObservableObject {
         record["days"] = days as NSNumber
         record["color"] = colorName as NSString
         database.save(record) { [weak self] record, error in
-            guard let record = record, error == nil else { return }
+            if let error = error {
+                print("[CloudKit] Failed to save habit '\(name)': \(error.localizedDescription)")
+                return
+            }
+            guard let record = record else { return }
+            print("[CloudKit] Saved habit '\(name)' with id \(record.recordID.recordName)")
             let habit = PositiveHabit(id: record.recordID,
                                       name: name,
                                       days: days,
@@ -87,7 +97,12 @@ class HabitTracker: ObservableObject {
         record["date"] = date as NSDate
         record["completed"] = completed as NSNumber
         database.save(record) { [weak self] record, error in
-            guard let record = record, error == nil else { return }
+            if let error = error {
+                print("[CloudKit] Failed to mark habit '\(habit.name)': \(error.localizedDescription)")
+                return
+            }
+            guard let record = record else { return }
+            print("[CloudKit] Marked habit '\(habit.name)' on \(date)")
             let entry = HabitRecord(
                 id: record.recordID,
                 habitID: habit.id,
@@ -104,7 +119,10 @@ class HabitTracker: ObservableObject {
     /// - Parameter completion: Callback with the fetched habits.
     func fetchHabits(completion: @escaping ([PositiveHabit]) -> Void) {
         let query = CKQuery(recordType: "PositiveHabit", predicate: NSPredicate(value: true))
-        database.perform(query, inZoneWith: nil) { [weak self] results, _ in
+        database.perform(query, inZoneWith: nil) { [weak self] results, error in
+            if let error = error {
+                print("[CloudKit] Failed to fetch habits: \(error.localizedDescription)")
+            }
             let list = results?.compactMap { record -> PositiveHabit? in
                 guard let name = record["name"] as? String else { return nil }
                 let days = record["days"] as? Int ?? 28
@@ -117,6 +135,7 @@ class HabitTracker: ObservableObject {
                 )
             } ?? []
             DispatchQueue.main.async {
+                print("[CloudKit] Fetched \(list.count) habits")
                 self?.habits = list
                 completion(list)
             }
@@ -130,7 +149,10 @@ class HabitTracker: ObservableObject {
     func fetchRecords(for habit: PositiveHabit, completion: @escaping ([HabitRecord]) -> Void) {
         let predicate = NSPredicate(format: "habit == %@", habit.id)
         let query = CKQuery(recordType: "HabitRecord", predicate: predicate)
-        database.perform(query, inZoneWith: nil) { [weak self] results, _ in
+        database.perform(query, inZoneWith: nil) { [weak self] results, error in
+            if let error = error {
+                print("[CloudKit] Failed to fetch records for habit '\(habit.name)': \(error.localizedDescription)")
+            }
             let entries = results?.compactMap { record -> HabitRecord? in
                 guard
                     let date = record["date"] as? Date,
@@ -144,6 +166,7 @@ class HabitTracker: ObservableObject {
                 )
             } ?? []
             DispatchQueue.main.async {
+                print("[CloudKit] Fetched \(entries.count) records for habit '\(habit.name)'")
                 self?.records = entries
                 completion(entries)
             }
@@ -154,7 +177,10 @@ class HabitTracker: ObservableObject {
     /// - Parameter completion: Callback with the fetched records.
     func fetchAllRecords(completion: @escaping ([HabitRecord]) -> Void) {
         let query = CKQuery(recordType: "HabitRecord", predicate: NSPredicate(value: true))
-        database.perform(query, inZoneWith: nil) { [weak self] results, _ in
+        database.perform(query, inZoneWith: nil) { [weak self] results, error in
+            if let error = error {
+                print("[CloudKit] Failed to fetch all records: \(error.localizedDescription)")
+            }
             let entries = results?.compactMap { record -> HabitRecord? in
                 guard
                     let date = record["date"] as? Date,
@@ -169,6 +195,7 @@ class HabitTracker: ObservableObject {
                 )
             } ?? []
             DispatchQueue.main.async {
+                print("[CloudKit] Fetched \(entries.count) total records")
                 self?.records = entries
                 completion(entries)
             }
@@ -230,10 +257,20 @@ class HabitTracker: ObservableObject {
     ///   - name: The new name to assign.
     func updateHabit(_ habit: PositiveHabit, name: String) {
         database.fetch(withRecordID: habit.id) { [weak self] record, error in
-            guard let record = record, error == nil else { return }
+            if let error = error {
+                print("[CloudKit] Failed to fetch habit for update: \(error.localizedDescription)")
+                return
+            }
+            guard let record = record else { return }
+            print("[CloudKit] Fetched habit '\(habit.name)' for update")
             record["name"] = name as NSString
             self?.database.save(record) { saved, err in
-                guard saved != nil, err == nil else { return }
+                if let err = err {
+                    print("[CloudKit] Failed to update habit '\(habit.name)': \(err.localizedDescription)")
+                    return
+                }
+                guard saved != nil else { return }
+                print("[CloudKit] Updated habit '\(habit.name)' to '\(name)'")
                 DispatchQueue.main.async {
                     if let index = self?.habits.firstIndex(where: { $0.id == habit.id }) {
                         let current = self?.habits[index]
@@ -254,7 +291,11 @@ class HabitTracker: ObservableObject {
     func deleteHabit(_ habit: PositiveHabit) {
         // Remove the habit record
         database.delete(withRecordID: habit.id) { [weak self] _, error in
-            guard error == nil else { return }
+            if let error = error {
+                print("[CloudKit] Failed to delete habit '\(habit.name)': \(error.localizedDescription)")
+                return
+            }
+            print("[CloudKit] Deleted habit '\(habit.name)'")
             DispatchQueue.main.async {
                 self?.habits.removeAll { $0.id == habit.id }
                 self?.records.removeAll { $0.habitID == habit.id }
@@ -264,9 +305,16 @@ class HabitTracker: ObservableObject {
         // Remove dependent records
         let predicate = NSPredicate(format: "habit == %@", habit.id)
         let query = CKQuery(recordType: "HabitRecord", predicate: predicate)
-        database.perform(query, inZoneWith: nil) { [weak self] results, _ in
+        database.perform(query, inZoneWith: nil) { [weak self] results, error in
+            if let error = error {
+                print("[CloudKit] Failed to fetch dependent records for deletion: \(error.localizedDescription)")
+            }
             results?.forEach { record in
-                self?.database.delete(withRecordID: record.recordID) { _, _ in }
+                self?.database.delete(withRecordID: record.recordID) { _, err in
+                    if let err = err {
+                        print("[CloudKit] Failed to delete dependent record: \(err.localizedDescription)")
+                    }
+                }
             }
         }
     }
