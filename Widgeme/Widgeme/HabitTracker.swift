@@ -5,6 +5,8 @@ import Foundation
 ///
 /// - `id`: Unique identifier of the CloudKit record.
 /// - `name`: The title of the habit, saved under the `"name"` key.
+/// - `days`: Number of days to display in the progress grid.
+/// - `colorName`: The name of the color used for the grid UI.
 struct PositiveHabit: Identifiable {
     let id: CKRecord.ID
     let name: String
@@ -82,6 +84,7 @@ class HabitTracker: ObservableObject {
                 days: days,
                 colorName: colorName
             )
+            print("Saved PositiveHabit \(record.recordID.recordName)")
             DispatchQueue.main.async { self?.habits.append(habit) }
         }
     }
@@ -111,6 +114,7 @@ class HabitTracker: ObservableObject {
                 date: date,
                 completed: completed
             )
+            print("Saved HabitRecord \(record.recordID.recordName) for habit \(habit.id.recordName)")
             DispatchQueue.main.async { self?.records.append(entry) }
         }
     }
@@ -138,6 +142,7 @@ class HabitTracker: ObservableObject {
             } ?? []
             DispatchQueue.main.async {
                 self?.habits = list
+                print("Fetched \(list.count) habits")
                 completion(list)
             }
         }
@@ -168,6 +173,7 @@ class HabitTracker: ObservableObject {
             } ?? []
             DispatchQueue.main.async {
                 self?.records = entries
+                print("Fetched \(entries.count) records for habit \(habit.id.recordName)")
                 completion(entries)
             }
         }
@@ -196,6 +202,7 @@ class HabitTracker: ObservableObject {
             } ?? []
             DispatchQueue.main.async {
                 self?.records = entries
+                print("Fetched \(entries.count) total records")
                 completion(entries)
             }
         }
@@ -274,6 +281,7 @@ class HabitTracker: ObservableObject {
                     print("No record returned after updating habit")
                     return
                 }
+                print("Updated habit \(habit.id.recordName) with new name \(name)")
                 DispatchQueue.main.async {
                     if let index = self?.habits.firstIndex(where: { $0.id == habit.id }) {
                         let current = self?.habits[index]
@@ -298,6 +306,7 @@ class HabitTracker: ObservableObject {
                 print("Error deleting habit \(habit.id): \(error.localizedDescription)")
                 return
             }
+            print("Deleted habit \(habit.id.recordName)")
             DispatchQueue.main.async {
                 self?.habits.removeAll { $0.id == habit.id }
                 self?.records.removeAll { $0.habitID == habit.id }
@@ -315,6 +324,8 @@ class HabitTracker: ObservableObject {
                 self?.database.delete(withRecordID: record.recordID) { _, err in
                     if let err = err {
                         print("Error deleting dependent record \(record.recordID): \(err.localizedDescription)")
+                    } else {
+                        print("Deleted dependent record \(record.recordID.recordName)")
                     }
                 }
             }
