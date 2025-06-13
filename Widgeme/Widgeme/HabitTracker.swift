@@ -49,6 +49,8 @@ class HabitTracker: ObservableObject {
         container.accountStatus { [weak self] status, error in
             if let error = error {
                 print("Error checking CloudKit account status: \(error.localizedDescription)")
+            } else {
+                print("Checked CloudKit account status: \(status.rawValue)")
             }
             DispatchQueue.main.async {
                 self?.accountStatus = status
